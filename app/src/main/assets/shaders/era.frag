@@ -3,7 +3,11 @@
 // Layer order (see ERA_ANALYSIS.md §0.1): sharpness/softness -> 3D LUT color
 // science -> grain -> halation -> video artifacts -> vignette -> dust -> leak
 // -> flicker. Temporal uniforms (flutter/flicker) are zeroed for stills.
-precision mediump float;
+//
+// precision: highp is REQUIRED here. On real mobile GPUs mediump is FP16
+// (max 65504); pixel-coordinate hashes overflow to Inf/NaN and poison the
+// whole frame to black. ES 3.0 guarantees fragment highp support.
+precision highp float;
 precision mediump sampler3D;
 
 in vec2 vUv;
@@ -36,9 +40,11 @@ uniform float uSeed;           // fixed per still, animated for preview
 uniform vec2 uResolution;
 
 float hash(vec2 p) {
-    p = fract(p * vec2(123.34, 456.21));
-    p += dot(p, p + 45.32);
-    return fract(p.x * p.y);
+    // inputs are pre-bounded (mod) so this stays finite even on FP16 ALUs
+    p = mod(p, 512.0);
+    p = fract(p * vec2(0.1031, 0.1097));
+    p += dot(p, p.yx + 19.19);
+    return fract((p.x + p.y) * p.x);
 }
 
 void main() {
@@ -47,8 +53,9 @@ void main() {
     // -- tape flutter: per-line horizontal displacement bursts ------------
     if (uFlutter > 0.001) {
         float line = floor(uv.y * 240.0);
-        float burst = step(0.992, hash(vec2(line, floor(uTime * 18.0))));
-        uv.x += burst * (hash(vec2(line, uTime)) - 0.5) * 0.08 * uFlutter;
+        float t = floor(mod(uTime * 18.0, 512.0));
+        float burst = step(0.992, hash(vec2(line, t)));
+        uv.x += burst * (hash(vec2(line, mod(uTime, 64.0))) - 0.5) * 0.08 * uFlutter;
     }
 
     vec3 scene = texture(uScene, uv).rgb;

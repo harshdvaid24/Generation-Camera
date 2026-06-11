@@ -177,7 +177,7 @@ class EraRenderer(
 
         blurPasses(scene, ba, bb)
         eraPass(p, scene.texture, bb.texture, target = null, outW = viewW, outH = viewH,
-            time = t, seed = (frameCount % 1000L).toFloat())
+            time = t, seed = (frameCount % 512L).toFloat())
 
         if (frameOn) drawFrameOverlay(p.eraIndex)
         GlUtilsGc.checkError("onDrawFrame")
