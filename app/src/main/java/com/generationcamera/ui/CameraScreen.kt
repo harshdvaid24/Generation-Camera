@@ -15,8 +15,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -91,7 +93,11 @@ fun CameraScreen(
         }
         view.setEGLContextClientVersion(3)
         view.setRenderer(renderer)
-        view.renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
+        // Continuous: latch the newest camera frame every vsync instead of
+        // depending on frame-available callbacks (robust against stalls that
+        // leave the surface black).
+        view.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
+        view.setZOrderMediaOverlay(true)
         Pair(view, renderer)
     }
     val (glView, renderer) = glBundle
@@ -173,6 +179,7 @@ fun CameraScreen(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .fillMaxWidth()
+                    .statusBarsPadding()
                     .padding(horizontal = 8.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
@@ -199,7 +206,7 @@ fun CameraScreen(
 
         // ---------- control deck ----------
         Column(
-            modifier = Modifier.fillMaxWidth().weight(1f),
+            modifier = Modifier.fillMaxWidth().weight(1f).navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceEvenly,
         ) {

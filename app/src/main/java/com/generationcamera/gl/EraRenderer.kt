@@ -11,6 +11,7 @@ import android.opengl.GLSurfaceView
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.util.Log
 import com.generationcamera.engine.EffectParams
 import com.generationcamera.engine.EraEngine
 import com.generationcamera.engine.Eras
@@ -79,6 +80,7 @@ class EraRenderer(
 
     private var startMs = 0L
     private var frameCount = 0L
+    private var loggedFirstFrame = false
 
     // ------------------------------------------------------------ lifecycle
 
@@ -108,6 +110,12 @@ class EraRenderer(
         }
         frameTexEra = -1
         frameTex = 0
+        loggedFirstFrame = false
+
+        GLES30.glDisable(GLES30.GL_DEPTH_TEST)
+        GLES30.glDisable(GLES30.GL_BLEND)
+        GLES30.glDisable(GLES30.GL_SCISSOR_TEST)
+        GLES30.glClearColor(0f, 0f, 0f, 1f)
 
         // (Re)create the camera input; on context loss the old one is dead.
         surfaceTexture?.release()
@@ -116,6 +124,7 @@ class EraRenderer(
         st.setOnFrameAvailableListener(this)
         surfaceTexture = st
         startMs = SystemClock.elapsedRealtime()
+        Log.i(TAG, "Surface created; maxTexSize=$maxTexSize")
         mainHandler.post { onSurfaceTextureReady(st) }
     }
 
@@ -123,6 +132,7 @@ class EraRenderer(
         viewW = width
         viewH = height
         releaseFbos()
+        Log.i(TAG, "Surface changed: ${width}x$height")
     }
 
     override fun onFrameAvailable(st: SurfaceTexture?) {
@@ -134,9 +144,21 @@ class EraRenderer(
     override fun onDrawFrame(gl: GL10?) {
         val st = surfaceTexture ?: return
         if (viewW == 0 || viewH == 0) return
-        st.updateTexImage()
+        // Rendered continuously: latch the newest camera frame each vsync.
+        // updateTexImage with no new frame is a harmless no-op, so we don't
+        // depend on onFrameAvailable plumbing at all.
+        try {
+            st.updateTexImage()
+        } catch (e: RuntimeException) {
+            Log.w(TAG, "updateTexImage failed", e)
+            return
+        }
         st.getTransformMatrix(texMatrix)
         frameCount++
+        if (!loggedFirstFrame) {
+            loggedFirstFrame = true
+            Log.i(TAG, "First preview frame drawn (${viewW}x$viewH)")
+        }
 
         val p = params
         val t = (SystemClock.elapsedRealtime() - startMs) / 1000f
@@ -169,13 +191,16 @@ class EraRenderer(
      * bitmap (caller saves it off-thread).
      */
     fun processStill(src: Bitmap, params: EffectParams, frameBitmap: Bitmap?): Bitmap {
-        // Cap to GPU texture limits while keeping aspect.
+        // Cap the working resolution: large mobile GPUs partially drop tiles
+        // under the memory pressure of a 12 MP multi-pass chain. ~5 MP output
+        // keeps the whole chain well inside budget.
         var w = src.width; var h = src.height
-        val maxDim = min(maxTexSize, 4096)
+        val maxDim = min(maxTexSize, STILL_MAX_DIM)
         if (max(w, h) > maxDim) {
             val s = maxDim.toFloat() / max(w, h)
             w = (w * s).toInt(); h = (h * s).toInt()
         }
+        Log.i(TAG, "processStill: src=${src.width}x${src.height} -> ${w}x$h")
         val input = if (w != src.width) Bitmap.createScaledBitmap(src, w, h, true) else src
         // grain cells are sized in output pixels; scale so the still matches
         // the preview's apparent grain (preview is ~1080 px wide)
@@ -196,23 +221,33 @@ class EraRenderer(
         GLES30.glUniform2f(loc(progCopy, "uWeave"), 0f, 0f)
         bindTex(0, GLES30.GL_TEXTURE_2D, srcTex, progCopy, "uTexture")
         quad.draw()
+        GlUtilsGc.checkError("still P1")
 
         blurPasses(scene, ba, bb)
+        GlUtilsGc.checkError("still P2")
         eraPass(p, scene.texture, bb.texture, target = out, outW = w, outH = h,
             time = 4.7f, seed = 7.31f)   // fixed time/seed: deterministic still
+        GlUtilsGc.checkError("still P3")
+
+        // Free everything but the result target before the big readback, and
+        // force the GPU to finish all tiles before reading.
+        GLES30.glDeleteTextures(1, intArrayOf(srcTex), 0)
+        scene.release(); ba.release(); bb.release()
+        GLES30.glFinish()
 
         // Read back (rows arrive bottom-up == image bottom first) and un-flip.
         val buf = ByteBuffer.allocateDirect(w * h * 4)
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, out.framebuffer)
+        GLES30.glPixelStorei(GLES30.GL_PACK_ALIGNMENT, 1)
         GLES30.glReadPixels(0, 0, w, h, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, buf)
+        GlUtilsGc.checkError("still readPixels")
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0)
         flipRowsInPlace(buf, w, h)
         val result = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         buf.position(0)
         result.copyPixelsFromBuffer(buf)
 
-        GLES30.glDeleteTextures(1, intArrayOf(srcTex), 0)
-        scene.release(); ba.release(); bb.release(); out.release()
+        out.release()
 
         if (frameBitmap != null) {
             Canvas(result).drawBitmap(frameBitmap, null, Rect(0, 0, w, h), null)
@@ -249,6 +284,7 @@ class EraRenderer(
         } else {
             GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0)
             GLES30.glViewport(0, 0, outW, outH)
+            GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT)
         }
         GLES30.glUseProgram(progEra)
         GLES30.glUniformMatrix4fv(loc(progEra, "uTexMatrix"), 1, false, identityMatrix, 0)
@@ -341,5 +377,10 @@ class EraRenderer(
         GLES30.glActiveTexture(GLES30.GL_TEXTURE0 + unit)
         GLES30.glBindTexture(target, tex)
         GLES30.glUniform1i(loc(program, uniform), unit)
+    }
+
+    private companion object {
+        const val TAG = "EraRenderer"
+        const val STILL_MAX_DIM = 2560
     }
 }

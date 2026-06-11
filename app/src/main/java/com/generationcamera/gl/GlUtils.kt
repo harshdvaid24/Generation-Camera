@@ -141,6 +141,8 @@ class Fbo(val width: Int, val height: Int) {
     fun bind() {
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, framebuffer)
         GLES30.glViewport(0, 0, width, height)
+        // Deterministic targets: never composite over uninitialized memory.
+        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT)
     }
 
     fun release() {

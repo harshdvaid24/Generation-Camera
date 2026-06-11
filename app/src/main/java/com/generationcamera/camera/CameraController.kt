@@ -58,13 +58,17 @@ class CameraController(private val context: Context) {
                 .setResolutionSelector(selector43)
                 .build()
             preview.setSurfaceProvider { request ->
+                Log.i(TAG, "SurfaceRequest: ${request.resolution}")
                 surfaceTexture.setDefaultBufferSize(
                     request.resolution.width, request.resolution.height
                 )
                 boundSurface?.release()
                 val surface = Surface(surfaceTexture)
                 boundSurface = surface
-                request.provideSurface(surface, mainExecutor) { surface.release() }
+                request.provideSurface(surface, mainExecutor) { result ->
+                    Log.i(TAG, "provideSurface result: ${result.resultCode}")
+                    surface.release()
+                }
             }
 
             val capture = ImageCapture.Builder()
@@ -82,6 +86,7 @@ class CameraController(private val context: Context) {
                 camera = cameraProvider.bindToLifecycle(
                     lifecycleOwner, cameraSelector, preview, capture
                 )
+                Log.i(TAG, "Camera bound (front=$front)")
             } catch (e: Exception) {
                 Log.e(TAG, "Camera bind failed", e)
             }
