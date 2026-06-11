@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Generation Camera</string>
+    <string name="permission_rationale">Generation Camera needs the camera to shoot era photos. Grant the permission to continue.</string>
+    <string name="grant_permission">Grant camera access</string>
+    <string name="shutter">Shutter</string>
+    <string name="gallery">Gallery</string>
+    <string name="flip_camera">Flip camera</string>
+    <string name="flash">Flash</string>
+    <string name="frame_switch">Frame</string>
+    <string name="degree">Degree</string>
+    <string name="saved_toast">Saved to Pictures/GenerationCamera</string>
+    <string name="share">Share</string>
+    <string name="back">Back</string>
+    <string name="empty_gallery">No era photos yet — go shoot some history.</string>
+</resources>
