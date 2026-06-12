@@ -103,6 +103,18 @@ Historical grounding: **exposure** was always the photographer's call (plate exp
 
 The Frame Switch produces an **instant-print (polaroid-style) output**: white frame, a handwriting line for a note, and a small `era · camera · effects` credit line; frameless photos get the credit line stamped subtly on the image. Capture plays the era's shutter sound, and polaroid saves run an eject-and-develop animation.
 
+### Quality-evolution arc (v1.2)
+
+Beyond per-era color, the engine models *the typical consumer photo of each decade getting better*: effective detail climbs monotonically across the century, with dips only where the iconic medium itself was low-fidelity. Render-resolution factors at degree 10 (research anchors: pre-1930 box cameras were dominated by soft meniscus lenses and small contact prints; 35 mm film resolves ≈10–20 MP-equivalent so the 1980s sit near-sharp; VHS ≈240 lines is the century's floor; early consumer digicams were 2–3 MP):
+
+```
+1900s 0.50 → 1910s 0.55 → 1920s 0.62 → 1930s 0.68 → 1940s 0.74 → 1950s 0.80
+→ 1960s 0.62 (Super-8 home-movie dip) → 1970s 0.76 → 1980s 0.90
+→ 1990s 0.45 (VHS dip) → 2000s 0.70 → 2010s 0.95 → 2020s/2026 1.00
+```
+
+Soft-focus and grain follow the same downward century arc (1900s soft 0.50/grain 0.16 → 1950s 0/0.08 → modern 0/0). Saved photos carry a small "Year · Camera" credit; instant prints are square-cropped on an exact 4:5 canvas (Instagram post native, story-friendly).
+
 ## 0.5 Open-source survey & base decision
 
 | Repo | What it offers | License | Verdict |

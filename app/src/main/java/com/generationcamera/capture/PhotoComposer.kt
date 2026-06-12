@@ -16,43 +16,55 @@ object PhotoComposer {
     private const val POLAROID_WHITE = 0xFFFAF7F0.toInt()
 
     /**
-     * Wraps the photo in an instant-print frame: even side/top margins, a
-     * deep bottom margin carrying the user's handwritten note and the era line.
+     * Wraps the photo in an instant-print frame, Instagram-ready: the image
+     * is center-cropped square (authentic instant film) and the canvas is
+     * exactly 4:5 portrait (1080×1350-class) — IG post native, and shares
+     * cleanly to stories. Bottom margin carries the handwritten note and a
+     * small "Year · Camera" line.
      */
     fun polaroid(photo: Bitmap, userNote: String, era: EraConfig): Bitmap {
-        val w = photo.width
-        val border = (w * 0.055f).toInt()
-        val bottom = (w * 0.26f).toInt()
-        val outW = w + 2 * border
-        val outH = photo.height + border + bottom
+        // center-crop square
+        val side = minOf(photo.width, photo.height)
+        val srcLeft = (photo.width - side) / 2
+        val srcTop = (photo.height - side) / 2
+
+        val border = (side * 0.068f).toInt()          // image fills ~88% width
+        val outW = side + 2 * border
+        val outH = (outW * 1.25f).toInt()             // 4:5 portrait
+        val bottom = outH - side - 2 * border         // note area ≈ 30% of width
         val out = Bitmap.createBitmap(outW, outH, Bitmap.Config.ARGB_8888)
         val c = Canvas(out)
         c.drawColor(POLAROID_WHITE)
-        c.drawBitmap(photo, border.toFloat(), border.toFloat(), null)
+        c.drawBitmap(
+            photo,
+            android.graphics.Rect(srcLeft, srcTop, srcLeft + side, srcTop + side),
+            android.graphics.Rect(border, border, border + side, border + side),
+            null,
+        )
 
-        val noteY = photo.height + border + bottom * 0.45f
+        val noteY = border + side + bottom * 0.48f
         if (userNote.isNotBlank()) {
             val notePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = 0xFF2E2A26.toInt()
-                textSize = bottom * 0.34f
+                textSize = bottom * 0.30f
                 typeface = Typeface.create("cursive", Typeface.NORMAL)
                 textAlign = Paint.Align.CENTER
             }
-            fitText(notePaint, userNote.take(48), outW * 0.90f)
+            fitText(notePaint, userNote.take(48), outW * 0.88f)
             c.drawText(userNote.take(48), outW / 2f, noteY, notePaint)
         }
-        drawCaptionLine(c, era.caption, outW / 2f, photo.height + border + bottom * 0.82f,
-            bottom * 0.13f, centered = true, dark = true, maxWidth = outW * 0.92f)
+        drawCaptionLine(c, era.caption, outW / 2f, border + side + bottom * 0.85f,
+            bottom * 0.085f, centered = true, dark = true, maxWidth = outW * 0.80f)
         return out
     }
 
-    /** Subtle era line at the bottom of a frameless photo. */
+    /** Small "Year · Camera" line at the bottom of a frameless photo. */
     fun stampCaption(photo: Bitmap, era: EraConfig) {
         val c = Canvas(photo)
-        val size = photo.width * 0.026f
+        val size = photo.width * 0.020f
         drawCaptionLine(c, era.caption, photo.width * 0.03f,
             photo.height - size * 1.2f, size, centered = false, dark = false,
-            maxWidth = photo.width * 0.94f)
+            maxWidth = photo.width * 0.60f)
     }
 
     /** 1990s VHS OSD / 2000s digicam date stamp, using the real capture time. */

@@ -48,7 +48,7 @@ fun EraDial(
     Canvas(
         modifier = modifier
             .fillMaxWidth()
-            .height(130.dp)
+            .height(112.dp)
             .pointerInput(Unit) {
                 detectHorizontalDragGestures(
                     onDragEnd = { dragDegrees = 0f },

@@ -107,15 +107,16 @@ fun PolaroidOverlay(
                     .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                // square instant-film window (final output is center-cropped square)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(photo.width.toFloat() / photo.height),
+                        .aspectRatio(1f),
                 ) {
                     Image(
                         bitmap = photo.asImageBitmap(),
                         contentDescription = null,
-                        contentScale = ContentScale.Fit,
+                        contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize(),
                     )
                     // instant-film develop: fades from a dark chemical brown
@@ -155,11 +156,11 @@ fun PolaroidOverlay(
                 Text(
                     text = era.caption,
                     color = Color(0xFF8A8378),
-                    fontSize = 9.sp,
+                    fontSize = 8.sp,
                     fontFamily = FontFamily.Monospace,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
-                    modifier = Modifier.padding(top = 6.dp),
+                    modifier = Modifier.padding(top = 8.dp),
                 )
             }
 

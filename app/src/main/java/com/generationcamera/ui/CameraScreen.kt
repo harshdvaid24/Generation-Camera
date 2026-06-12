@@ -336,40 +336,28 @@ fun CameraScreen(
                 )
                 EraDial(selected = eraIndex, onSelected = { viewModel.setEra(it) })
 
-                // era-adaptive parameter strip: EV (always), Zoom (1960s+)
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    MiniSliderLabel(stringResource(R.string.exposure))
-                    Slider(
+                // era-adaptive parameters: one aligned control per row
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    ControlSlider(
+                        label = stringResource(R.string.exposure),
                         value = exposure,
-                        onValueChange = { viewModel.setExposure(it) },
-                        valueRange = -1f..1f,
-                        modifier = Modifier.weight(1f).height(28.dp),
+                        range = -1f..1f,
+                        onChange = { viewModel.setExposure(it) },
                     )
                     if (era.hasZoom) {
-                        MiniSliderLabel(stringResource(R.string.zoom))
-                        Slider(
+                        ControlSlider(
+                            label = stringResource(R.string.zoom),
                             value = zoom,
-                            onValueChange = { viewModel.setZoom(it) },
-                            valueRange = 0f..1f,
-                            modifier = Modifier.weight(1f).height(28.dp),
+                            range = 0f..1f,
+                            onChange = { viewModel.setZoom(it) },
                         )
                     }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    MiniSliderLabel("${stringResource(R.string.degree)} $degree")
-                    Slider(
+                    ControlSlider(
+                        label = "${stringResource(R.string.degree)} $degree",
                         value = degree.toFloat(),
-                        onValueChange = { viewModel.setDegree(it.toInt()) },
-                        valueRange = 0f..10f,
+                        range = 0f..10f,
                         steps = 9,
-                        modifier = Modifier.weight(1f).height(28.dp),
+                        onChange = { viewModel.setDegree(it.toInt()) },
                     )
                 }
 
@@ -451,13 +439,35 @@ fun CameraScreen(
 }
 
 @Composable
-private fun MiniSliderLabel(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.labelSmall,
-        color = Color.White.copy(alpha = 0.85f),
-        modifier = Modifier.width(64.dp),
-    )
+private fun ControlSlider(
+    label: String,
+    value: Float,
+    range: ClosedFloatingPointRange<Float>,
+    onChange: (Float) -> Unit,
+    steps: Int = 0,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(40.dp)
+            .padding(horizontal = 24.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White.copy(alpha = 0.85f),
+            maxLines = 1,
+            modifier = Modifier.width(76.dp),
+        )
+        Slider(
+            value = value,
+            onValueChange = onChange,
+            valueRange = range,
+            steps = steps,
+            modifier = Modifier.weight(1f),
+        )
+    }
 }
 
 @Composable

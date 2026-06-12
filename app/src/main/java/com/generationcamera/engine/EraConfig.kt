@@ -32,8 +32,8 @@ data class EraConfig(
 ) {
     val lutAsset get() = "luts/era_$id.cube"
 
-    /** "1970s · Polaroid SX-70 · Faded print · light leaks" — stamped on photos. */
-    val caption get() = "$label · $cameraModel · $tagline"
+    /** "1970s · Polaroid SX-70" — stamped on photos. */
+    val caption get() = "$label · $cameraModel"
 
     // ---- Era-authentic control availability (researched, ERA_ANALYSIS.md §0.4).
     // Derived from the decade so history stays in one place:
