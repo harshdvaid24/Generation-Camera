@@ -32,7 +32,6 @@ class CameraViewModel(private val savedState: SavedStateHandle) : ViewModel() {
         savedState[KEY_ERA] = clamped
         val era = Eras.all[clamped]
         // The dial is a time machine: drop controls this era didn't have.
-        if (!era.hasSelfie && lensFront.value) savedState[KEY_LENS] = false
         if (!era.hasFlash && flashMode.value != 0) savedState[KEY_FLASH] = 0
         if (!era.hasZoom && zoom.value != 0f) savedState[KEY_ZOOM] = 0f
         if (!era.hasTimer && timerSec.value != 0) savedState[KEY_TIMER] = 0

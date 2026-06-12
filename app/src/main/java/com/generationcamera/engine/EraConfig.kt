@@ -55,8 +55,10 @@ data class EraConfig(
     /** On-image timestamps: 1990s camcorder OSD, 2000s digicam date stamp. */
     val hasTimestamp get() = decadeStart == 1990 || decadeStart == 2000
 
-    /** Front "selfie" cameras arrive with 2000s camera phones. */
-    val hasSelfie get() = decadeStart >= 2000
+    /** Lens flip is always available — historically front cameras are a
+     *  2000s invention, but hiding half the hardware hurt usability, so the
+     *  selfie lens is a deliberate UX exception to era authenticity. */
+    val hasSelfie get() = true
 
     /** Composition grid is a smartphone-app convention. */
     val hasGrid get() = decadeStart >= 2010
