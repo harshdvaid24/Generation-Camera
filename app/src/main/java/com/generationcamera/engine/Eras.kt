@@ -11,7 +11,6 @@ object Eras {
         EraConfig(
             id = "1900s", label = "1900s", tagline = "Dry plate · sepia · pictorialist glow",
             cameraModel = "Kodak Brownie", shutterSound = "shutter_plate",
-            hasFlash = false, hasSelfie = false, hasTimestamp = false, hasGrid = false,
             grain = 0.14f, grainSize = 3.2f, chromaNoise = 0f,
             vignette = 0.75f, vignetteHard = 0.8f,
             softFocus = 0.45f, halation = 0.35f, sharpness = 0f,
@@ -21,7 +20,6 @@ object Eras {
         EraConfig(
             id = "1910s", label = "1910s", tagline = "Autochrome · pastel starch-grain color",
             cameraModel = "Autochrome Lumière", shutterSound = "shutter_plate",
-            hasFlash = false, hasSelfie = false, hasTimestamp = false, hasGrid = false,
             grain = 0.12f, grainSize = 3.6f, chromaNoise = 0.10f,
             vignette = 0.55f, vignetteHard = 0.5f,
             softFocus = 0.30f, halation = 0.25f, sharpness = 0f,
@@ -31,7 +29,6 @@ object Eras {
         EraConfig(
             id = "1920s", label = "1920s", tagline = "Panchromatic B&W · early 35 mm",
             cameraModel = "Leica I", shutterSound = "shutter_plate",
-            hasFlash = false, hasSelfie = false, hasTimestamp = false, hasGrid = false,
             grain = 0.11f, grainSize = 2.2f, chromaNoise = 0f,
             vignette = 0.45f, vignetteHard = 0.25f,
             softFocus = 0.10f, halation = 0.12f, sharpness = 0f,
@@ -41,7 +38,6 @@ object Eras {
         EraConfig(
             id = "1930s", label = "1930s", tagline = "Pale muted newsreel B&W",
             cameraModel = "Kodak Retina I", shutterSound = "shutter_leaf",
-            hasFlash = true, hasSelfie = false, hasTimestamp = false, hasGrid = false,
             grain = 0.13f, grainSize = 2.4f, chromaNoise = 0f,
             vignette = 0.40f, vignetteHard = 0.2f,
             softFocus = 0.06f, halation = 0.08f, sharpness = 0f,
@@ -51,7 +47,6 @@ object Eras {
         EraConfig(
             id = "1940s", label = "1940s", tagline = "Press B&W · flashbulb punch",
             cameraModel = "Graflex Speed Graphic", shutterSound = "shutter_leaf",
-            hasFlash = true, hasSelfie = false, hasTimestamp = false, hasGrid = false,
             grain = 0.09f, grainSize = 1.8f, chromaNoise = 0f,
             vignette = 0.25f, vignetteHard = 0.1f,
             softFocus = 0f, halation = 0.10f, sharpness = 0f,
@@ -61,7 +56,6 @@ object Eras {
         EraConfig(
             id = "1950s", label = "1950s", tagline = "Warm saturated slide color",
             cameraModel = "Leica M3 · Kodachrome", shutterSound = "shutter_leaf",
-            hasFlash = true, hasSelfie = false, hasTimestamp = false, hasGrid = false,
             grain = 0.07f, grainSize = 1.6f, chromaNoise = 0.03f,
             vignette = 0.30f, vignetteHard = 0.1f,
             softFocus = 0f, halation = 0.10f, sharpness = 0f,
@@ -71,7 +65,6 @@ object Eras {
         EraConfig(
             id = "1960s", label = "1960s", tagline = "Super-8 cine · warm · gate weave",
             cameraModel = "Kodak Super 8", shutterSound = "shutter_cine",
-            hasFlash = true, hasSelfie = false, hasTimestamp = false, hasGrid = false,
             grain = 0.12f, grainSize = 2.4f, chromaNoise = 0.05f,
             vignette = 0.55f, vignetteHard = 0.45f,
             softFocus = 0.08f, halation = 0.22f, sharpness = 0f,
@@ -81,7 +74,6 @@ object Eras {
         EraConfig(
             id = "1970s", label = "1970s", tagline = "Faded print · light leaks",
             cameraModel = "Polaroid SX-70", shutterSound = "shutter_polaroid",
-            hasFlash = true, hasSelfie = false, hasTimestamp = false, hasGrid = false,
             grain = 0.09f, grainSize = 2.0f, chromaNoise = 0.04f,
             vignette = 0.40f, vignetteHard = 0.2f,
             softFocus = 0.06f, halation = 0.25f, sharpness = 0f,
@@ -91,7 +83,6 @@ object Eras {
         EraConfig(
             id = "1980s", label = "1980s", tagline = "35 mm negative · vibrant & punchy",
             cameraModel = "Canon AE-1", shutterSound = "shutter_slr",
-            hasFlash = true, hasSelfie = false, hasTimestamp = false, hasGrid = false,
             grain = 0.06f, grainSize = 1.4f, chromaNoise = 0.03f,
             vignette = 0.25f, vignetteHard = 0.1f,
             softFocus = 0f, halation = 0.06f, sharpness = 0.15f,
@@ -101,7 +92,6 @@ object Eras {
         EraConfig(
             id = "1990s", label = "1990s", tagline = "VHS camcorder · scanlines · flutter",
             cameraModel = "Sony Handycam", shutterSound = "shutter_beep",
-            hasFlash = true, hasSelfie = false, hasTimestamp = true, hasGrid = false,
             grain = 0.05f, grainSize = 1.6f, chromaNoise = 0.22f,
             vignette = 0.20f, vignetteHard = 0.1f,
             softFocus = 0.10f, halation = 0.15f, sharpness = 0f,
@@ -111,7 +101,6 @@ object Eras {
         EraConfig(
             id = "2000s", label = "2000s", tagline = "Early digicam · oversharp · flash",
             cameraModel = "Sony Cyber-shot", shutterSound = "shutter_digicam",
-            hasFlash = true, hasSelfie = true, hasTimestamp = true, hasGrid = false,
             grain = 0.07f, grainSize = 1.2f, chromaNoise = 0.12f,
             vignette = 0.05f, vignetteHard = 0f,
             softFocus = 0f, halation = 0f, sharpness = 1.1f,
@@ -121,7 +110,6 @@ object Eras {
         EraConfig(
             id = "2010s", label = "2010s", tagline = "Early smartphone · mild HDR",
             cameraModel = "Early smartphone", shutterSound = "shutter_modern",
-            hasFlash = true, hasSelfie = true, hasTimestamp = false, hasGrid = true,
             grain = 0.02f, grainSize = 1.0f, chromaNoise = 0.02f,
             vignette = 0f, vignetteHard = 0f,
             softFocus = 0f, halation = 0f, sharpness = 0.35f,
@@ -131,7 +119,6 @@ object Eras {
         EraConfig(
             id = "2020s", label = "2020s", tagline = "Clean computational · sharp",
             cameraModel = "Computational phone", shutterSound = "shutter_modern",
-            hasFlash = true, hasSelfie = true, hasTimestamp = false, hasGrid = true,
             grain = 0f, grainSize = 1.0f, chromaNoise = 0f,
             vignette = 0f, vignetteHard = 0f,
             softFocus = 0f, halation = 0f, sharpness = 0.25f,
@@ -141,7 +128,6 @@ object Eras {
         EraConfig(
             id = "2026", label = "2026", tagline = "Today · as it is",
             cameraModel = "Generation Camera", shutterSound = "shutter_modern",
-            hasFlash = true, hasSelfie = true, hasTimestamp = false, hasGrid = true,
             grain = 0f, grainSize = 1.0f, chromaNoise = 0f,
             vignette = 0f, vignetteHard = 0f,
             softFocus = 0f, halation = 0f, sharpness = 0.15f,

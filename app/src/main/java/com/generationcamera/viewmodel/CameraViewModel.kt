@@ -21,6 +21,9 @@ class CameraViewModel(private val savedState: SavedStateHandle) : ViewModel() {
     val flashMode: StateFlow<Int> = savedState.getStateFlow(KEY_FLASH, 0) // 0 off, 1 on, 2 auto
     val timestampOn: StateFlow<Boolean> = savedState.getStateFlow(KEY_TS, false)
     val gridOn: StateFlow<Boolean> = savedState.getStateFlow(KEY_GRID, false)
+    val exposure: StateFlow<Float> = savedState.getStateFlow(KEY_EV, 0f)     // -1..1 EV fraction
+    val zoom: StateFlow<Float> = savedState.getStateFlow(KEY_ZOOM, 0f)       // 0..1 linear zoom
+    val timerSec: StateFlow<Int> = savedState.getStateFlow(KEY_TIMER, 0)     // 0 / 3 / 10
 
     val capturing = MutableStateFlow(false)
 
@@ -31,6 +34,8 @@ class CameraViewModel(private val savedState: SavedStateHandle) : ViewModel() {
         // The dial is a time machine: drop controls this era didn't have.
         if (!era.hasSelfie && lensFront.value) savedState[KEY_LENS] = false
         if (!era.hasFlash && flashMode.value != 0) savedState[KEY_FLASH] = 0
+        if (!era.hasZoom && zoom.value != 0f) savedState[KEY_ZOOM] = 0f
+        if (!era.hasTimer && timerSec.value != 0) savedState[KEY_TIMER] = 0
     }
 
     fun setDegree(value: Int) { savedState[KEY_DEGREE] = value.coerceIn(0, 10) }
@@ -39,6 +44,13 @@ class CameraViewModel(private val savedState: SavedStateHandle) : ViewModel() {
     fun cycleFlash() { savedState[KEY_FLASH] = (flashMode.value + 1) % 3 }
     fun toggleTimestamp() { savedState[KEY_TS] = !(timestampOn.value) }
     fun toggleGrid() { savedState[KEY_GRID] = !(gridOn.value) }
+    fun setExposure(value: Float) { savedState[KEY_EV] = value.coerceIn(-1f, 1f) }
+    fun setZoom(value: Float) { savedState[KEY_ZOOM] = value.coerceIn(0f, 1f) }
+    fun cycleTimer() {
+        savedState[KEY_TIMER] = when (timerSec.value) {
+            0 -> 3; 3 -> 10; else -> 0
+        }
+    }
 
     private companion object {
         const val KEY_ERA = "eraIndex"
@@ -48,6 +60,9 @@ class CameraViewModel(private val savedState: SavedStateHandle) : ViewModel() {
         const val KEY_FLASH = "flashMode"
         const val KEY_TS = "timestampOn"
         const val KEY_GRID = "gridOn"
+        const val KEY_EV = "exposure"
+        const val KEY_ZOOM = "zoom"
+        const val KEY_TIMER = "timerSec"
         const val DEFAULT_ERA = 8 // 1980s — the crowd-pleaser stop
     }
 }

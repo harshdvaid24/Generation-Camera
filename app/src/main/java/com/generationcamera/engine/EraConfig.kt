@@ -12,11 +12,6 @@ data class EraConfig(
     val tagline: String,       // short look description shown under the dial
     val cameraModel: String,   // representative camera of the decade (photo caption)
     val shutterSound: String,  // res/raw sound name (synthesized, era-appropriate)
-    // Era-authentic control availability (researched, ERA_ANALYSIS.md §0.5):
-    val hasFlash: Boolean,     // flashbulbs arrive ~1930 (GE Sashalite era)
-    val hasSelfie: Boolean,    // front cameras arrive with 2000s camera phones
-    val hasTimestamp: Boolean, // 1990s camcorder OSD / 2000s digicam date stamp
-    val hasGrid: Boolean,      // composition grid is a smartphone-era control
     val grain: Float,          // luminance grain amount
     val grainSize: Float,      // grain cell size in px
     val chromaNoise: Float,    // color noise (autochrome starch / VHS / CCD)
@@ -39,6 +34,32 @@ data class EraConfig(
 
     /** "1970s · Polaroid SX-70 · Faded print · light leaks" — stamped on photos. */
     val caption get() = "$label · $cameraModel · $tagline"
+
+    // ---- Era-authentic control availability (researched, ERA_ANALYSIS.md §0.4).
+    // Derived from the decade so history stays in one place:
+    private val decadeStart: Int get() = id.take(4).toInt()
+
+    /** Exposure was always the photographer's call: plate exposure time →
+     *  aperture/shutter → EV compensation. Available in every era. */
+    val hasExposure get() = true
+
+    /** First consumer flashbulbs ship ~1930 (before that: magnesium powder). */
+    val hasFlash get() = decadeStart >= 1930
+
+    /** Mechanical self-timers ("Autoknips" era) become common in the 1930s. */
+    val hasTimer get() = decadeStart >= 1930
+
+    /** Consumer zoom arrives with 1960s power-zoom Super-8 cameras. */
+    val hasZoom get() = decadeStart >= 1960
+
+    /** On-image timestamps: 1990s camcorder OSD, 2000s digicam date stamp. */
+    val hasTimestamp get() = decadeStart == 1990 || decadeStart == 2000
+
+    /** Front "selfie" cameras arrive with 2000s camera phones. */
+    val hasSelfie get() = decadeStart >= 2000
+
+    /** Composition grid is a smartphone-app convention. */
+    val hasGrid get() = decadeStart >= 2010
 }
 
 /**

@@ -38,10 +38,11 @@ object PhotoComposer {
                 typeface = Typeface.create("cursive", Typeface.NORMAL)
                 textAlign = Paint.Align.CENTER
             }
+            fitText(notePaint, userNote.take(48), outW * 0.90f)
             c.drawText(userNote.take(48), outW / 2f, noteY, notePaint)
         }
         drawCaptionLine(c, era.caption, outW / 2f, photo.height + border + bottom * 0.82f,
-            bottom * 0.13f, centered = true, dark = true)
+            bottom * 0.13f, centered = true, dark = true, maxWidth = outW * 0.92f)
         return out
     }
 
@@ -50,7 +51,8 @@ object PhotoComposer {
         val c = Canvas(photo)
         val size = photo.width * 0.026f
         drawCaptionLine(c, era.caption, photo.width * 0.03f,
-            photo.height - size * 1.2f, size, centered = false, dark = false)
+            photo.height - size * 1.2f, size, centered = false, dark = false,
+            maxWidth = photo.width * 0.94f)
     }
 
     /** 1990s VHS OSD / 2000s digicam date stamp, using the real capture time. */
@@ -80,7 +82,7 @@ object PhotoComposer {
 
     private fun drawCaptionLine(
         c: Canvas, text: String, x: Float, y: Float, size: Float,
-        centered: Boolean, dark: Boolean,
+        centered: Boolean, dark: Boolean, maxWidth: Float,
     ) {
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = if (dark) 0xFF8A8378.toInt() else 0xCCFFFFFF.toInt()
@@ -89,6 +91,13 @@ object PhotoComposer {
             textAlign = if (centered) Paint.Align.CENTER else Paint.Align.LEFT
             if (!dark) setShadowLayer(size * 0.15f, 0f, 0f, 0xAA000000.toInt())
         }
+        fitText(p, text, maxWidth)
         c.drawText(text, x, y, p)
+    }
+
+    /** Shrinks the paint's text size until [text] fits within [maxWidth]. */
+    private fun fitText(p: Paint, text: String, maxWidth: Float) {
+        val w = p.measureText(text)
+        if (w > maxWidth) p.textSize = p.textSize * maxWidth / w
     }
 }

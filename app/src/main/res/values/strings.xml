@@ -20,4 +20,7 @@
     <string name="saving">Saving…</string>
     <string name="timestamp">Stamp</string>
     <string name="grid">Grid</string>
+    <string name="timer">Self-timer</string>
+    <string name="exposure">EV</string>
+    <string name="zoom">Zoom</string>
 </resources>

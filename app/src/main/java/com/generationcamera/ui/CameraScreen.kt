@@ -13,10 +13,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cameraswitch
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.FlashAuto
 import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
@@ -43,8 +44,10 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,6 +57,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -74,6 +78,7 @@ import com.generationcamera.ui.theme.Charcoal
 import com.generationcamera.viewmodel.CameraViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -86,6 +91,7 @@ fun CameraScreen(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val scope = rememberCoroutineScope()
 
     val eraIndex by viewModel.eraIndex.collectAsState()
     val degree by viewModel.degree.collectAsState()
@@ -94,6 +100,9 @@ fun CameraScreen(
     val flashMode by viewModel.flashMode.collectAsState()
     val timestampOn by viewModel.timestampOn.collectAsState()
     val gridOn by viewModel.gridOn.collectAsState()
+    val exposure by viewModel.exposure.collectAsState()
+    val zoom by viewModel.zoom.collectAsState()
+    val timerSec by viewModel.timerSec.collectAsState()
     val capturing by viewModel.capturing.collectAsState()
     val era = Eras.all[eraIndex]
 
@@ -102,6 +111,7 @@ fun CameraScreen(
     var surfaceTexture by remember { mutableStateOf<SurfaceTexture?>(null) }
     var pendingPhoto by remember { mutableStateOf<Bitmap?>(null) }
     var saving by remember { mutableStateOf(false) }
+    var countdown by remember { mutableIntStateOf(0) }
 
     // GLSurfaceView + renderer live across recompositions.
     val glBundle = remember {
@@ -138,6 +148,8 @@ fun CameraScreen(
             else -> ImageCapture.FLASH_MODE_OFF
         }
     }
+    LaunchedEffect(zoom) { cameraController.linearZoom = zoom }
+    LaunchedEffect(exposure) { cameraController.exposureFraction = exposure }
 
     // GLSurfaceView pause/resume with the lifecycle.
     DisposableEffect(lifecycleOwner) {
@@ -158,22 +170,14 @@ fun CameraScreen(
 
     val savedToast = stringResource(R.string.saved_toast)
 
-    fun saveAndFinish(bitmap: Bitmap) {
-        MainScope().launch(Dispatchers.IO) {
-            MediaStorage.saveJpeg(context.applicationContext, bitmap, era.id, degree)
-            bitmap.recycle()
-            launch(Dispatchers.Main) {
-                Toast.makeText(context, savedToast, Toast.LENGTH_SHORT).show()
-                saving = false
-                pendingPhoto = null
-                viewModel.capturing.value = false
-            }
-        }
+    fun showSavedAndReset() {
+        Toast.makeText(context, savedToast, Toast.LENGTH_SHORT).show()
+        saving = false
+        pendingPhoto = null
+        viewModel.capturing.value = false
     }
 
-    fun capture() {
-        if (capturing) return
-        viewModel.capturing.value = true
+    fun doCapture() {
         sounds.play(era)
         val stillParams = EraEngine.compute(eraIndex, degree, forStill = true)
         val stampTime = timestampOn && era.hasTimestamp
@@ -192,11 +196,34 @@ fun CameraScreen(
                         pendingPhoto = processed   // PolaroidOverlay takes over
                         sounds.playPrint()
                     } else {
-                        PhotoComposer.stampCaption(processed, era)
-                        saveAndFinish(processed)
+                        launch(Dispatchers.IO) {
+                            PhotoComposer.stampCaption(processed, era)
+                            MediaStorage.saveJpeg(
+                                context.applicationContext, processed, era.id, degree
+                            )
+                            processed.recycle()    // never displayed: safe to free
+                            launch(Dispatchers.Main) { showSavedAndReset() }
+                        }
                     }
                 }
             }
+        }
+    }
+
+    fun capture() {
+        if (capturing) return
+        viewModel.capturing.value = true
+        if (timerSec > 0) {
+            scope.launch {
+                for (i in timerSec downTo 1) {
+                    countdown = i
+                    delay(1000)
+                }
+                countdown = 0
+                doCapture()
+            }
+        } else {
+            doCapture()
         }
     }
 
@@ -212,6 +239,15 @@ fun CameraScreen(
 
                 if (gridOn && era.hasGrid) RuleOfThirdsGrid()
                 if (timestampOn && era.hasTimestamp) TimestampPreview(era.id)
+                if (countdown > 0) {
+                    Text(
+                        "$countdown",
+                        color = Color.White,
+                        fontSize = 96.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.align(Alignment.Center),
+                    )
+                }
 
                 Row(
                     modifier = Modifier
@@ -236,10 +272,30 @@ fun CameraScreen(
                                 )
                             }
                         }
+                        if (era.hasTimer) {
+                            IconButton(onClick = { viewModel.cycleTimer() }) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.Filled.Timer,
+                                        contentDescription = stringResource(R.string.timer),
+                                        tint = if (timerSec > 0) Amber else Color.White,
+                                    )
+                                    if (timerSec > 0) {
+                                        Text(
+                                            "$timerSec",
+                                            color = Amber,
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(top = 3.dp),
+                                        )
+                                    }
+                                }
+                            }
+                        }
                         if (era.hasTimestamp) {
                             IconButton(onClick = { viewModel.toggleTimestamp() }) {
                                 Icon(
-                                    Icons.Filled.Timer,
+                                    Icons.Filled.DateRange,
                                     contentDescription = stringResource(R.string.timestamp),
                                     tint = if (timestampOn) Amber else Color.White,
                                 )
@@ -280,34 +336,45 @@ fun CameraScreen(
                 )
                 EraDial(selected = eraIndex, onSelected = { viewModel.setEra(it) })
 
+                // era-adaptive parameter strip: EV (always), Zoom (1960s+)
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        "${stringResource(R.string.degree)} $degree",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color.White.copy(alpha = 0.85f),
-                        modifier = Modifier.width(86.dp),
+                    MiniSliderLabel(stringResource(R.string.exposure))
+                    Slider(
+                        value = exposure,
+                        onValueChange = { viewModel.setExposure(it) },
+                        valueRange = -1f..1f,
+                        modifier = Modifier.weight(1f).height(28.dp),
                     )
+                    if (era.hasZoom) {
+                        MiniSliderLabel(stringResource(R.string.zoom))
+                        Slider(
+                            value = zoom,
+                            onValueChange = { viewModel.setZoom(it) },
+                            valueRange = 0f..1f,
+                            modifier = Modifier.weight(1f).height(28.dp),
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    MiniSliderLabel("${stringResource(R.string.degree)} $degree")
                     Slider(
                         value = degree.toFloat(),
                         onValueChange = { viewModel.setDegree(it.toInt()) },
                         valueRange = 0f..10f,
                         steps = 9,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).height(28.dp),
                     )
-                    Spacer(Modifier.width(12.dp))
-                    Text(
-                        stringResource(R.string.frame_switch),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color.White.copy(alpha = 0.85f),
-                    )
-                    Switch(checked = frameOn, onCheckedChange = { viewModel.setFrameOn(it) })
                 }
 
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 28.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -321,14 +388,14 @@ fun CameraScreen(
                     // shutter
                     Box(
                         modifier = Modifier
-                            .size(76.dp)
+                            .size(72.dp)
                             .clip(CircleShape)
                             .border(4.dp, Amber, CircleShape)
                             .background(if (capturing) Amber.copy(alpha = 0.4f) else Color.Transparent)
                             .padding(8.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        if (capturing && pendingPhoto == null) {
+                        if (capturing && pendingPhoto == null && countdown == 0) {
                             CircularProgressIndicator(color = Amber)
                         } else {
                             Box(
@@ -340,7 +407,15 @@ fun CameraScreen(
                             )
                         }
                     }
-                    Spacer(Modifier.size(48.dp))
+                    // instant-print frame switch
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            stringResource(R.string.frame_switch),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.White.copy(alpha = 0.85f),
+                        )
+                        Switch(checked = frameOn, onCheckedChange = { viewModel.setFrameOn(it) })
+                    }
                 }
             }
         }
@@ -354,18 +429,35 @@ fun CameraScreen(
                 saving = saving,
                 onSave = { note ->
                     saving = true
-                    val framed = PhotoComposer.polaroid(pending, note, era)
-                    pending.recycle()
-                    saveAndFinish(framed)
+                    // Compose + save off the main thread. The preview bitmap is
+                    // NOT recycled: the overlay may still be drawing it (the GC
+                    // reclaims it once the overlay leaves composition).
+                    MainScope().launch(Dispatchers.IO) {
+                        val framed = PhotoComposer.polaroid(pending, note, era)
+                        MediaStorage.saveJpeg(
+                            context.applicationContext, framed, era.id, degree
+                        )
+                        framed.recycle()
+                        launch(Dispatchers.Main) { showSavedAndReset() }
+                    }
                 },
                 onRetake = {
-                    pending.recycle()
                     pendingPhoto = null
                     viewModel.capturing.value = false
                 },
             )
         }
     }
+}
+
+@Composable
+private fun MiniSliderLabel(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelSmall,
+        color = Color.White.copy(alpha = 0.85f),
+        modifier = Modifier.width(64.dp),
+    )
 }
 
 @Composable

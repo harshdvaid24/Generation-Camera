@@ -40,6 +40,27 @@ class CameraController(private val context: Context) {
             field = value
             imageCapture?.flashMode = value
         }
+    /** 0..1, CameraX linear zoom. Re-applied after every (re)bind. */
+    var linearZoom = 0f
+        set(value) {
+            field = value
+            camera?.cameraControl?.setLinearZoom(value)
+        }
+    /** -1..1 fraction of the device's EV-compensation range. */
+    var exposureFraction = 0f
+        set(value) {
+            field = value
+            applyExposure()
+        }
+
+    private fun applyExposure() {
+        val cam = camera ?: return
+        val range = cam.cameraInfo.exposureState.exposureCompensationRange
+        if (range.lower == 0 && range.upper == 0) return
+        val f = exposureFraction
+        val idx = (f * (if (f >= 0) range.upper else -range.lower)).toInt()
+        cam.cameraControl.setExposureCompensationIndex(idx)
+    }
 
     private val mainExecutor: Executor get() = ContextCompat.getMainExecutor(context)
 
@@ -86,6 +107,8 @@ class CameraController(private val context: Context) {
                 camera = cameraProvider.bindToLifecycle(
                     lifecycleOwner, cameraSelector, preview, capture
                 )
+                if (linearZoom > 0f) camera?.cameraControl?.setLinearZoom(linearZoom)
+                if (exposureFraction != 0f) applyExposure()
                 Log.i(TAG, "Camera bound (front=$front)")
             } catch (e: Exception) {
                 Log.e(TAG, "Camera bind failed", e)
