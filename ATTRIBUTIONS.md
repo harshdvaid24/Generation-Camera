@@ -1,6 +1,6 @@
 # ATTRIBUTIONS
 
-Generation Camera's filter engine was **written from scratch** (see `ERA_ANALYSIS.md` §0.4 for the decision record); no third-party filter library code is included. The following open-source projects were *studied* during design and deserve credit:
+Generation Camera's filter engine was **written from scratch** (see `ERA_ANALYSIS.md` §0.5 for the decision record); no third-party filter library code is included. The following open-source projects were *studied* during design and deserve credit:
 
 | Project | License | What we learned from it |
 |---------|---------|--------------------------|

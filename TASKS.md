@@ -4,7 +4,7 @@
 - [x] Layer decomposition of "era look" (10 layers, pipeline placement) → `ERA_ANALYSIS.md` §0.1
 - [x] Era Spec Table, 13 decades incl. 1900/1910/1920, research-grounded → §0.2
 - [x] Degree (0–10) intensity model with per-layer curves → §0.3
-- [x] OSS survey (gpuimage, gpuimage-plus, Awesome-Filters, camerax-gpuimage, retroboy) + adopt/reject → §0.4
+- [x] OSS survey (gpuimage, gpuimage-plus, Awesome-Filters, camerax-gpuimage, retroboy) + adopt/reject → §0.5
 
 ## Phase 1 — Tech selection
 - [x] Native Kotlin vs RN decision record → `PLAN.md`

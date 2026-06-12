@@ -19,7 +19,7 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
 ASSETS = os.path.join(ROOT, "app", "src", "main", "assets")
 LUT_SIZE = 17
 ERAS = ["1900s", "1910s", "1920s", "1930s", "1940s", "1950s", "1960s",
-        "1970s", "1980s", "1990s", "2000s", "2010s", "2020s"]
+        "1970s", "1980s", "1990s", "2000s", "2010s", "2020s", "2026"]
 
 rng = np.random.default_rng(42)
 
@@ -202,12 +202,18 @@ def era_2020s(rgb):
     return contrast(x, 0.12)
 
 
+def era_2026(rgb):
+    """Today: as-shot, the faintest polish only."""
+    x = saturation(rgb, 1.03)
+    return contrast(x, 0.06)
+
+
 RECIPES = {
     "1900s": era_1900s, "1910s": era_1910s, "1920s": era_1920s,
     "1930s": era_1930s, "1940s": era_1940s, "1950s": era_1950s,
     "1960s": era_1960s, "1970s": era_1970s, "1980s": era_1980s,
     "1990s": era_1990s, "2000s": era_2000s, "2010s": era_2010s,
-    "2020s": era_2020s,
+    "2020s": era_2020s, "2026": era_2026,
 }
 
 
@@ -453,6 +459,101 @@ FRAME_FNS = {
 }
 
 
+# ------------------------------------------------------------- shutter sounds
+# Synthesized era-appropriate shutter sounds (we bundle no recordings).
+# Written to res/raw so SoundPool can load them compressed-safe.
+RAW_DIR = os.path.join(ROOT, "app", "src", "main", "res", "raw")
+SR = 44100
+
+
+def _env(n, tau):
+    return np.exp(-np.arange(n) / (SR * tau))
+
+
+def _noise(n):
+    return rng.standard_normal(n).astype(np.float32)
+
+
+def _sine(f, n):
+    return np.sin(2 * np.pi * f * np.arange(n) / SR).astype(np.float32)
+
+
+def _click(dur=0.008, bright=1.0):
+    n = int(SR * dur)
+    return _noise(n) * _env(n, dur / 4) * bright
+
+
+def _mix(total_s, parts):
+    """parts: list of (offset_seconds, signal)."""
+    out = np.zeros(int(SR * total_s), np.float32)
+    for off, sig in parts:
+        i = int(SR * off)
+        j = min(len(out), i + len(sig))
+        out[i:j] += sig[: j - i]
+    return out
+
+
+def _write_wav(name, sig):
+    import wave
+    sig = np.clip(sig / (np.max(np.abs(sig)) + 1e-9) * 0.8, -1, 1)
+    path = os.path.join(RAW_DIR, f"{name}.wav")
+    with wave.open(path, "w") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(SR)
+        w.writeframes((sig * 32767).astype(np.int16).tobytes())
+    print("sound", path)
+
+
+def gen_sounds():
+    os.makedirs(RAW_DIR, exist_ok=True)
+    # 1900s-20s: plate camera — heavy wooden ka-chunk
+    thump = _sine(70, int(SR * 0.09)) * _env(int(SR * 0.09), 0.03)
+    _write_wav("shutter_plate", _mix(0.30, [
+        (0.0, _click(0.012)), (0.0, thump * 1.4),
+        (0.13, _click(0.018, 0.8)), (0.13, _sine(55, int(SR * 0.07)) * _env(int(SR * 0.07), 0.025)),
+    ]))
+    # 1930s-50s: leaf shutter — crisp double click
+    _write_wav("shutter_leaf", _mix(0.12, [
+        (0.0, _click(0.006, 1.2)), (0.035, _click(0.009, 0.7)),
+    ]))
+    # 1960s: Super-8 — motor pulse train + hum
+    n = int(SR * 0.6)
+    hum = _sine(55, n) * 0.25 * np.linspace(1, 0.6, n)
+    pulses = [(k / 18.0, _click(0.005, 0.8)) for k in range(11)]
+    _write_wav("shutter_cine", _mix(0.62, [(0.0, hum)] + pulses))
+    # 1970s: Polaroid — eject motor whirr
+    n = int(SR * 0.9)
+    t = np.arange(n) / SR
+    whirr = (_noise(n) * 0.35 + _sine(130, n) * 0.4) * (1 + 0.4 * np.sin(2 * np.pi * 9 * t))
+    whirr *= np.minimum(1, t * 18) * np.linspace(1, 0.25, n)
+    _write_wav("shutter_polaroid", _mix(0.95, [
+        (0.0, _click(0.010, 1.1)), (0.02, whirr), (0.88, _click(0.008, 0.6)),
+    ]))
+    # 1980s: SLR — mirror slap + film-advance ratchet
+    ratchet = [(0.20 + k * 0.045, _click(0.007, 0.7 - k * 0.08)) for k in range(5)]
+    _write_wav("shutter_slr", _mix(0.45, [
+        (0.0, _click(0.010, 1.3)), (0.04, _click(0.012, 0.9)),
+    ] + ratchet))
+    # 1990s: camcorder — electronic beep
+    n = int(SR * 0.09)
+    _write_wav("shutter_beep", _mix(0.12, [
+        (0.0, np.sign(_sine(1000, n)) * 0.4 * _env(n, 0.2)),
+    ]))
+    # 2000s: digicam — two-tone beep + tiny click
+    n = int(SR * 0.06)
+    _write_wav("shutter_digicam", _mix(0.18, [
+        (0.0, _sine(1318, n) * _env(n, 0.1)),
+        (0.07, _sine(1760, n) * _env(n, 0.1)),
+        (0.14, _click(0.005, 0.5)),
+    ]))
+    # 2010s+: modern soft click
+    n = int(SR * 0.02)
+    _write_wav("shutter_modern", _mix(0.05, [
+        (0.0, _click(0.012, 0.8)), (0.0, _sine(900, n) * 0.3 * _env(n, 0.006)),
+    ]))
+
+
 def main():
     for sub in ("luts", "overlays", "frames"):
         os.makedirs(os.path.join(ASSETS, sub), exist_ok=True)
@@ -466,6 +567,7 @@ def main():
         path = os.path.join(ASSETS, "frames", f"frame_{era}.png")
         fn().save(path)
         print("frame", path)
+    gen_sounds()
 
 
 if __name__ == "__main__":

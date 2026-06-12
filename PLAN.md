@@ -13,12 +13,12 @@ Supporting choices:
 
 - **OpenGL ES 3.0** (not 2.0): needed for `sampler3D` (true trilinear 3D LUTs) and GLSL 300 es. ES 3.0 is universal on `minSdk 26` hardware. (Vulkan rejected: enormous boilerplate for zero visual benefit at this workload.)
 - **Jetpack Compose** for all UI chrome (dial, slider, gallery); the GL preview is a `GLSurfaceView` wrapped in `AndroidView`.
-- **No filter-library dependency** — pipeline built from scratch (decision record in `ERA_ANALYSIS.md` §0.4).
+- **No filter-library dependency** — pipeline built from scratch (decision record in `ERA_ANALYSIS.md` §0.5).
 - **MVVM**: a single `CameraViewModel` owns `(eraId, degree, frameOn, lens, flash)` as `StateFlow`; the renderer and UI both observe it.
 
 ## 1.2 Base repositories
 
-Survey, licenses, and adopt/reject rationale: see `ERA_ANALYSIS.md` §0.4. Net result: zero runtime third-party filter dependencies; only androidx (CameraX, Compose, Lifecycle) + Kotlin coroutines. Attributions for studied repos in `ATTRIBUTIONS.md`.
+Survey, licenses, and adopt/reject rationale: see `ERA_ANALYSIS.md` §0.5. Net result: zero runtime third-party filter dependencies; only androidx (CameraX, Compose, Lifecycle) + Kotlin coroutines. Attributions for studied repos in `ATTRIBUTIONS.md`.
 
 ## Dependency manifest (all Apache-2.0 / permissive)
 

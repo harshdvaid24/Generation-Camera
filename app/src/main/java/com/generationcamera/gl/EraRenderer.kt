@@ -2,8 +2,6 @@ package com.generationcamera.gl
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Rect
 import android.graphics.SurfaceTexture
 import android.opengl.GLES11Ext
 import android.opengl.GLES30
@@ -43,7 +41,6 @@ class EraRenderer(
 ) : GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
 
     @Volatile var params: EffectParams = EraEngine.compute(8, 5, forStill = false)
-    @Volatile var frameOn: Boolean = false
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -51,7 +48,6 @@ class EraRenderer(
     private var progCopy = 0
     private var progBlur = 0
     private var progEra = 0
-    private var progFrame = 0
     private lateinit var quad: Quad
 
     private var oesTex = 0
@@ -74,8 +70,6 @@ class EraRenderer(
     private lateinit var lutTex: IntArray
     private lateinit var dustTex: IntArray
     private lateinit var leakTex: IntArray
-    private var frameTexEra = -1
-    private var frameTex = 0
     private var maxTexSize = 4096
 
     private var startMs = 0L
@@ -90,7 +84,6 @@ class EraRenderer(
         progCopy = GlUtilsGc.buildProgram(vert, GlUtilsGc.loadAssetText(context, "shaders/copy.frag"))
         progBlur = GlUtilsGc.buildProgram(vert, GlUtilsGc.loadAssetText(context, "shaders/blur.frag"))
         progEra = GlUtilsGc.buildProgram(vert, GlUtilsGc.loadAssetText(context, "shaders/era.frag"))
-        progFrame = GlUtilsGc.buildProgram(vert, GlUtilsGc.loadAssetText(context, "shaders/frame.frag"))
         quad = Quad()
 
         val size = IntArray(1)
@@ -108,8 +101,6 @@ class EraRenderer(
         leakTex = IntArray(2) { i ->
             GlUtilsGc.createTexture(GlUtilsGc.loadAssetBitmap(context, "overlays/leak_$i.png"), recycle = true)
         }
-        frameTexEra = -1
-        frameTex = 0
         loggedFirstFrame = false
 
         GLES30.glDisable(GLES30.GL_DEPTH_TEST)
@@ -178,8 +169,6 @@ class EraRenderer(
         blurPasses(scene, ba, bb)
         eraPass(p, scene.texture, bb.texture, target = null, outW = viewW, outH = viewH,
             time = t, seed = (frameCount % 512L).toFloat())
-
-        if (frameOn) drawFrameOverlay(p.eraIndex)
         GlUtilsGc.checkError("onDrawFrame")
     }
 
@@ -190,7 +179,7 @@ class EraRenderer(
      * the GL thread. Call via glSurfaceView.queueEvent. Returns the processed
      * bitmap (caller saves it off-thread).
      */
-    fun processStill(src: Bitmap, params: EffectParams, frameBitmap: Bitmap?): Bitmap {
+    fun processStill(src: Bitmap, params: EffectParams): Bitmap {
         // Cap the working resolution: large mobile GPUs partially drop tiles
         // under the memory pressure of a 12 MP multi-pass chain. ~5 MP output
         // keeps the whole chain well inside budget.
@@ -248,16 +237,8 @@ class EraRenderer(
         result.copyPixelsFromBuffer(buf)
 
         out.release()
-
-        if (frameBitmap != null) {
-            Canvas(result).drawBitmap(frameBitmap, null, Rect(0, 0, w, h), null)
-        }
         return result
     }
-
-    /** Loads the frame bitmap for CPU compositing into stills. */
-    fun loadFrameBitmap(eraIndex: Int): Bitmap =
-        GlUtilsGc.loadAssetBitmap(context, Eras.all[eraIndex].frameAsset)
 
     // ------------------------------------------------------------ passes
 
@@ -317,23 +298,6 @@ class EraRenderer(
         setF("uSeed", seed)
         GLES30.glUniform2f(loc(progEra, "uResolution"), outW.toFloat(), outH.toFloat())
         quad.draw()
-    }
-
-    private fun drawFrameOverlay(eraIndex: Int) {
-        if (frameTexEra != eraIndex) {
-            if (frameTex != 0) GLES30.glDeleteTextures(1, intArrayOf(frameTex), 0)
-            frameTex = GlUtilsGc.createTexture(loadFrameBitmap(eraIndex), recycle = true)
-            frameTexEra = eraIndex
-        }
-        GLES30.glEnable(GLES30.GL_BLEND)
-        GLES30.glBlendFunc(GLES30.GL_SRC_ALPHA, GLES30.GL_ONE_MINUS_SRC_ALPHA)
-        GLES30.glUseProgram(progFrame)
-        // Bitmap textures store row0 = image top; flip to our convention.
-        GLES30.glUniformMatrix4fv(loc(progFrame, "uTexMatrix"), 1, false, flipYMatrix, 0)
-        GLES30.glUniform2f(loc(progFrame, "uWeave"), 0f, 0f)
-        bindTex(0, GLES30.GL_TEXTURE_2D, frameTex, progFrame, "uTexture")
-        quad.draw()
-        GLES30.glDisable(GLES30.GL_BLEND)
     }
 
     // ------------------------------------------------------------ helpers

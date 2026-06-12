@@ -17,7 +17,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
@@ -48,19 +50,25 @@ import kotlinx.coroutines.withContext
 fun GalleryScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     var photos by remember { mutableStateOf<List<Uri>>(emptyList()) }
-    var viewing by remember { mutableStateOf<Uri?>(null) }
+    var viewingIndex by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(Unit) {
         photos = withContext(Dispatchers.IO) { queryPhotos(context) }
     }
 
     Column(modifier = Modifier.fillMaxSize().background(Charcoal)) {
+        val viewing = viewingIndex
+        val pagerState = rememberPagerState(initialPage = viewing ?: 0) { photos.size }
+        LaunchedEffect(viewing) {
+            if (viewing != null) pagerState.scrollToPage(viewing)
+        }
+
         Row(
             modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            IconButton(onClick = { if (viewing != null) viewing = null else onBack() }) {
+            IconButton(onClick = { if (viewingIndex != null) viewingIndex = null else onBack() }) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = stringResource(R.string.back),
@@ -68,40 +76,45 @@ fun GalleryScreen(onBack: () -> Unit) {
                 )
             }
             Text(
-                stringResource(R.string.gallery),
+                if (viewing != null && photos.isNotEmpty())
+                    "${pagerState.currentPage + 1} / ${photos.size}"
+                else stringResource(R.string.gallery),
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.White,
             )
-            val current = viewing
             IconButton(
                 onClick = {
-                    if (current != null) {
-                        val intent = Intent(Intent.ACTION_SEND).apply {
-                            type = "image/jpeg"
-                            putExtra(Intent.EXTRA_STREAM, current)
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        }
-                        context.startActivity(Intent.createChooser(intent, null))
+                    val uri = photos.getOrNull(pagerState.currentPage) ?: return@IconButton
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "image/jpeg"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
+                    context.startActivity(Intent.createChooser(intent, null))
                 },
-                enabled = current != null,
+                enabled = viewing != null,
             ) {
                 Icon(
                     Icons.Filled.Share,
                     contentDescription = stringResource(R.string.share),
-                    tint = if (current != null) Color.White else Color.Gray,
+                    tint = if (viewing != null) Color.White else Color.Gray,
                 )
             }
         }
 
-        val current = viewing
-        if (current != null) {
-            AsyncImage(
-                model = current,
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
+        if (viewing != null && photos.isNotEmpty()) {
+            // full-screen viewer: swipe horizontally between photos
+            HorizontalPager(
+                state = pagerState,
                 modifier = Modifier.fillMaxSize(),
-            )
+            ) { page ->
+                AsyncImage(
+                    model = photos[page],
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
         } else if (photos.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
@@ -117,14 +130,14 @@ fun GalleryScreen(onBack: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(2.dp),
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                items(photos) { uri ->
+                itemsIndexed(photos) { index, uri ->
                     AsyncImage(
                         model = uri,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .aspectRatio(3f / 4f)
-                            .clickable { viewing = uri },
+                            .clickable { viewingIndex = index },
                     )
                 }
             }

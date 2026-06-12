@@ -13,4 +13,11 @@
     <string name="share">Share</string>
     <string name="back">Back</string>
     <string name="empty_gallery">No era photos yet — go shoot some history.</string>
+    <string name="polaroid_note_hint">write something…</string>
+    <string name="printing">printing…</string>
+    <string name="retake">Retake</string>
+    <string name="save_photo">Save</string>
+    <string name="saving">Saving…</string>
+    <string name="timestamp">Stamp</string>
+    <string name="grid">Grid</string>
 </resources>
