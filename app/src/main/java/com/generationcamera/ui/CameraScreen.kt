@@ -11,12 +11,16 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -56,6 +60,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -169,10 +176,16 @@ fun CameraScreen(
     }
 
     val savedToast = stringResource(R.string.saved_toast)
+    val saveFailedToast = stringResource(R.string.save_failed)
+    val shutterLabel = stringResource(R.string.shutter)
 
-    fun showSavedAndReset() {
-        Toast.makeText(context, savedToast, Toast.LENGTH_SHORT).show()
+    /** A failed instant-print save keeps the print on screen for a retry. */
+    fun showSaveResult(saved: Boolean, keepPendingOnFailure: Boolean = false) {
+        Toast.makeText(
+            context, if (saved) savedToast else saveFailedToast, Toast.LENGTH_SHORT
+        ).show()
         saving = false
+        if (!saved && keepPendingOnFailure) return
         pendingPhoto = null
         viewModel.capturing.value = false
     }
@@ -198,11 +211,11 @@ fun CameraScreen(
                     } else {
                         launch(Dispatchers.IO) {
                             PhotoComposer.stampCaption(processed, era)
-                            MediaStorage.saveJpeg(
+                            val saved = MediaStorage.saveJpeg(
                                 context.applicationContext, processed, era.id, degree
-                            )
+                            ) != null
                             processed.recycle()    // never displayed: safe to free
-                            launch(Dispatchers.Main) { showSavedAndReset() }
+                            launch(Dispatchers.Main) { showSaveResult(saved) }
                         }
                     }
                 }
@@ -227,12 +240,21 @@ fun CameraScreen(
         }
     }
 
-    Box(Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize().background(Charcoal)) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        // The control deck needs DeckMinHeight. A full-width 3:4 preview leaves
+        // less than that on short screens (360x780 dp class), which used to
+        // squeeze the shutter row; there the preview narrows instead.
+        val navInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        val previewHeight = minOf(maxWidth * 4f / 3f, maxHeight - navInset - DeckMinHeight)
+            .coerceAtLeast(MinPreviewHeight)
+        Column(
+            modifier = Modifier.fillMaxSize().background(Charcoal),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             // ---------- live filtered preview ----------
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .height(previewHeight)
                     .aspectRatio(3f / 4f)
             ) {
                 AndroidView(factory = { glView }, modifier = Modifier.fillMaxSize())
@@ -391,7 +413,8 @@ fun CameraScreen(
                                     .fillMaxSize()
                                     .clip(CircleShape)
                                     .background(Amber)
-                                    .clickable { capture() }
+                                    .semantics { contentDescription = shutterLabel }
+                                    .clickable(role = Role.Button) { capture() }
                             )
                         }
                     }
@@ -422,11 +445,13 @@ fun CameraScreen(
                     // reclaims it once the overlay leaves composition).
                     MainScope().launch(Dispatchers.IO) {
                         val framed = PhotoComposer.polaroid(pending, note, era)
-                        MediaStorage.saveJpeg(
+                        val saved = MediaStorage.saveJpeg(
                             context.applicationContext, framed, era.id, degree
-                        )
+                        ) != null
                         framed.recycle()
-                        launch(Dispatchers.Main) { showSavedAndReset() }
+                        launch(Dispatchers.Main) {
+                            showSaveResult(saved, keepPendingOnFailure = true)
+                        }
                     }
                 },
                 onRetake = {
@@ -437,6 +462,10 @@ fun CameraScreen(
         }
     }
 }
+
+// tagline 16 + dial 112 + three 40 dp sliders + 72 dp shutter row, plus slack
+private val DeckMinHeight = 328.dp
+private val MinPreviewHeight = 160.dp
 
 @Composable
 private fun ControlSlider(

@@ -10,6 +10,7 @@
     <string name="frame_switch">Frame</string>
     <string name="degree">Degree</string>
     <string name="saved_toast">Saved to Pictures/GenerationCamera</string>
+    <string name="save_failed">Couldn\'t save the photo — check free storage</string>
     <string name="share">Share</string>
     <string name="back">Back</string>
     <string name="empty_gallery">No era photos yet — go shoot some history.</string>

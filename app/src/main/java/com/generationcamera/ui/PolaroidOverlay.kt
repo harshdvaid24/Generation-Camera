@@ -1,6 +1,7 @@
 package com.generationcamera.ui
 
 import android.graphics.Bitmap
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -74,6 +75,7 @@ fun PolaroidOverlay(
         develop.animateTo(1f, tween(durationMillis = 3000, easing = LinearEasing))
     }
     val printed = eject.value >= 0.999f
+    BackHandler { if (!saving) onRetake() }
 
     Box(
         modifier = Modifier

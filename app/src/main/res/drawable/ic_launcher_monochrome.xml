@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Themed-icon silhouette of the dial mark (Android 13+ tints the alpha). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5.7"
+        android:pathData="M54,30.65a23.35,23.35 0 1,0 0,46.7a23.35,23.35 0 1,0 0,-46.7z" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4.4"
+        android:pathData="M55.02,25.62 A28.4,28.4 0 0,1 65.4,27.99 M67.23,28.87 A28.4,28.4 0 0,1 75.56,35.51 M76.82,37.1 A28.4,28.4 0 0,1 81.44,46.69 M81.9,48.67 A28.4,28.4 0 0,1 81.9,59.33 M81.44,61.31 A28.4,28.4 0 0,1 76.82,70.9 M75.56,72.49 A28.4,28.4 0 0,1 67.23,79.13 M65.4,80.01 A28.4,28.4 0 0,1 55.02,82.38 M52.98,82.38 A28.4,28.4 0 0,1 42.6,80.01 M40.77,79.13 A28.4,28.4 0 0,1 32.44,72.49 M31.18,70.9 A28.4,28.4 0 0,1 26.56,61.31 M26.1,59.33 A28.4,28.4 0 0,1 26.1,48.67 M26.56,46.69 A28.4,28.4 0 0,1 31.18,37.1 M32.44,35.51 A28.4,28.4 0 0,1 40.77,28.87 M42.6,27.99 A28.4,28.4 0 0,1 52.98,25.62" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,46.5a7.5,7.5 0 1,0 0,15a7.5,7.5 0 1,0 0,-15z" />
+</vector>

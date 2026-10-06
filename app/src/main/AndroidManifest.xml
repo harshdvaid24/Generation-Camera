@@ -13,16 +13,23 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.GenerationCamera"
-        tools:targetApi="35">
+        tools:targetApi="36">
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:configChanges="orientation|screenSize"
             android:screenOrientation="portrait">
+            <!-- The layout and GL preview are portrait-only. Targeting API 36
+                 ignores the orientation lock on large screens unless we opt
+                 out; this opt-out ends at API 37, so a tablet layout is due
+                 before that target bump. -->
+            <property
+                android:name="android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY"
+                android:value="true" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

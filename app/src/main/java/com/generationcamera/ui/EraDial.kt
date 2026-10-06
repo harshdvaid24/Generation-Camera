@@ -24,9 +24,11 @@ import com.generationcamera.ui.theme.Amber
 import com.generationcamera.ui.theme.AmberDim
 import com.generationcamera.ui.theme.OffWhite
 import com.generationcamera.ui.theme.PanelGray
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 private const val DEGREES_PER_ERA = 16f
+private const val LABEL_MAX_ANGLE = DEGREES_PER_ERA * 1.5f   // selected era ± 1 (also mid-drag)
 
 /**
  * Tactile rotary Eras Dial. The dial is a big wheel whose center sits below
@@ -99,6 +101,9 @@ fun EraDial(
                     end = Offset(center.x, center.y - radius + if (isSel) 22.dp.toPx() else 16.dp.toPx()),
                     strokeWidth = if (isSel) 4.dp.toPx() else 2.dp.toPx(),
                 )
+                // Canvas doesn't clip: labels further round the wheel than the
+                // neighbours would land on top of the sliders below the strip.
+                if (abs(angle) > LABEL_MAX_ANGLE) return@rotate
                 labelPaint.color = (if (isSel) Amber else OffWhite.copy(alpha = 0.55f)).toArgb()
                 labelPaint.textSize = (if (isSel) 17 else 14).dp.toPx()
                 drawContext.canvas.nativeCanvas.drawText(

@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -55,6 +56,7 @@ fun GalleryScreen(onBack: () -> Unit) {
     LaunchedEffect(Unit) {
         photos = withContext(Dispatchers.IO) { queryPhotos(context) }
     }
+    BackHandler { if (viewingIndex != null) viewingIndex = null else onBack() }
 
     Column(modifier = Modifier.fillMaxSize().background(Charcoal)) {
         val viewing = viewingIndex
