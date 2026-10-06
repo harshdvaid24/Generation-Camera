@@ -1,0 +1,44 @@
+# Google Play delivery. Gradle builds the bundle (see .github/workflows/release.yml);
+# fastlane only talks to the Play Developer API.
+#
+# Credentials: SUPPLY_JSON_KEY_DATA (raw service-account JSON, used by CI)
+#          or  SUPPLY_JSON_KEY      (path to the JSON file, handy locally)
+
+default_platform(:android)
+
+platform :android do
+  desc "Upload the built AAB to a Play track. Options: track (internal), status (draft)"
+  lane :deploy do |options|
+    # Changelogs are deliberately not skipped: metadata/android/<lang>/changelogs/<versionCode>.txt,
+    # or else default.txt, becomes the release notes of the uploaded build.
+    upload_to_play_store(
+      track: options[:track] || "internal",
+      release_status: options[:status] || "draft",
+      aab: "app/build/outputs/bundle/release/app-release.aab",
+      mapping: "app/build/outputs/mapping/release/mapping.txt",
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+    )
+  end
+
+  desc "Push store listing text, icon, feature graphic and screenshots. Options: track (internal)"
+  lane :listing do |options|
+    # supply resolves exactly one release on a track even when it only pushes the listing,
+    # and fails on a track with none (production, until the app is promoted) or several
+    # (a draft on top of a live build). So name the newest build of the track we release to.
+    track = options[:track] || "internal"
+    version_code = google_play_track_version_codes(track: track).max
+    UI.user_error!("No release on the '#{track}' track yet - upload a build first, then push the listing") unless version_code
+
+    upload_to_play_store(
+      track: track,
+      version_code: version_code,
+      skip_upload_aab: true,
+      skip_upload_apk: true,
+      skip_upload_changelogs: true,
+      sync_image_upload: true,
+    )
+  end
+end

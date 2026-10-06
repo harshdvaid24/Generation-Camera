@@ -1,0 +1,37 @@
+name: Play Store listing
+
+# Pushes the store listing kept in fastlane/metadata/android (title, descriptions,
+# icon, feature graphic, phone screenshots) to Google Play. Manual only.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: play-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  listing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1.327.0
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Push listing to Google Play
+        env:
+          SUPPLY_JSON_KEY_DATA: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$SUPPLY_JSON_KEY_DATA" ]; then
+            echo "::error::Secret PLAY_SERVICE_ACCOUNT_JSON is not set (see RELEASING.md)"; exit 1
+          fi
+          bundle exec fastlane android listing
