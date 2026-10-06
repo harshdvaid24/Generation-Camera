@@ -32,7 +32,7 @@ This first upload fixes two things. **The package name** `com.generationcamera` 
 
 ### 2. Publish the privacy policy
 
-The policy lives in `/docs` and is served by GitHub Pages at https://harshdvaid24.github.io/Generation-Camera/privacy.html. Enable Pages once in the repository settings (deploy from branch `claude/end-to-end-research-dev-x2ck2x`, folder `/docs`), then confirm the page is live before you paste the URL into Play Console:
+The policy lives in `/docs` and is served by GitHub Pages at https://harshdvaid24.github.io/Generation-Camera/privacy.html. Pages is already enabled for this repository (deploy from branch `claude/end-to-end-research-dev-x2ck2x`, folder `/docs`; if the default branch is ever renamed, point Pages at the new name in the repository settings). Confirm the page is live before you paste the URL into Play Console:
 
 ```bash
 curl -sI https://harshdvaid24.github.io/Generation-Camera/privacy.html | head -1   # expect: HTTP/2 200
