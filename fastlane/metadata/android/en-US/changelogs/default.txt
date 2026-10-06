@@ -1,0 +1,7 @@
+First release on Google Play.
+
+- Decade dial with 14 stops, from the 1900s to 2026
+- Degree slider: 0 is subtle, 10 is the maximum
+- Controls and shutter sounds that change with the era
+- Instant prints with a handwritten note, sized 4:5 for social posts
+- Fully offline: no internet permission, no account, no ads

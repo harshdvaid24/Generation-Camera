@@ -1,0 +1,53 @@
+Most cameras shoot the present. This one has a dial for the past.
+
+Generation Camera has a rotary decade dial. Turn it, and the live viewfinder and the saved photo take on the look of that decade's everyday photo medium. Sepia dry plates. 8 mm home movies. Camcorder tape. Then today, as it is.
+
+The dial: 14 stops
+- 1900s: sepia dry plate. Reds go dark, skies blow out, heavy oval vignette, soft glow, dust.
+- 1910s: Autochrome. Pastel color with starch-grain speckle.
+- 1920s: early 35 mm black and white.
+- 1930s: pale, grainy newsreel black and white.
+- 1940s: punchy press black and white.
+- 1950s: warm, saturated slide color.
+- 1960s: 8 mm home-movie film. Warm, vignetted, with gate weave and flicker in the live preview.
+- 1970s: faded print with light leaks.
+- 1980s: vibrant 35 mm color negative.
+- 1990s: camcorder tape. Scanlines, chroma bleed, tape flutter.
+- 2000s: early digicam. Oversharpened, cool flash white balance, noise.
+- 2010s: early smartphone with mild HDR.
+- 2020s: clean computational look.
+- 2026: today, as it is.
+
+Degree: a hint or the full treatment
+- A slider from 0 to 10. 0 is subtle, 10 is the maximum.
+- Grain, dust and light leaks ramp up late, so low degrees stay clean.
+
+The controls time-travel too
+- Flash and self-timer (3 or 10 seconds) from the 1930s on.
+- Zoom from the 1960s on.
+- Optional date stamps: date and time in the 1990s, orange date in the 2000s.
+- A rule-of-thirds grid from the 2010s on.
+- Exposure (EV) and the front or back camera in every decade.
+- Synthesized shutter sounds change with the era, from a plate-camera clack to a digicam beep.
+
+Instant prints with a handwritten note
+- Flip the Frame switch and the shot ejects and develops as an instant print: a square photo on a white card.
+- Type a one-line note before you save. It lands on the card in handwriting.
+- The card is an exact 4:5 canvas, ready for social posts.
+
+What you see is what you save
+- Stills run through the same real-time GPU shaders as the viewfinder.
+- Photos save as JPEG to Pictures/GenerationCamera on your device.
+- Swipe through them in the gallery. Share with the system share sheet.
+- Photos only. No video.
+
+Offline and private
+- Everything runs on your device.
+- The app never requests the internet permission, so it cannot send anything anywhere.
+- No account. No ads. No analytics. No trackers.
+- No location access, no microphone, no GPS tags in your photos.
+
+Open source
+https://github.com/harshdvaid24/Generation-Camera
+
+Era looks are emulations made with standard image-processing techniques. Generation Camera is an independent project.
