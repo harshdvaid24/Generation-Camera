@@ -20,6 +20,9 @@ fastlane/README.md
 keystore.properties
 keystore.env
 play-service-account*.json
+*.pem
+*service-account*.json
+play-publisher-*.json
 fastlane/*.json
 .env*
 !.env.example
