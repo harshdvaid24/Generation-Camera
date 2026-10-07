@@ -64,14 +64,10 @@ Permission changes can take a while to reach the API. If the first run is refuse
 | `PLAY_SERVICE_ACCOUNT_JSON` | Secret | Raw JSON of the service-account key | Owner, step 3 |
 | `PLAY_RELEASE_STATUS` | Variable, optional | `draft` or `completed`, used by tag-triggered runs (default `draft`) | Owner, after the first publish |
 
+One command sets (or rotates) all of them from the files in `~/keystores/generation-camera/`:
+
 ```bash
-gh secret list        # names only; all five secrets should be listed
-# Create or rotate the keystore secrets:
-source ~/keystores/generation-camera/keystore.env
-base64 < ~/keystores/generation-camera/upload.jks | gh secret set KEYSTORE_BASE64
-printf %s "$KEYSTORE_PASSWORD" | gh secret set KEYSTORE_PASSWORD
-printf %s "$KEY_ALIAS" | gh secret set KEY_ALIAS
-printf %s "$KEY_PASSWORD" | gh secret set KEY_PASSWORD
+bash scripts/set-play-secrets.sh   # ends with `gh secret list`; all five names should be listed
 ```
 
 ## Shipping a release
