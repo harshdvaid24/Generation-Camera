@@ -3,6 +3,7 @@ package com.generationcamera.ui
 import android.graphics.Bitmap
 import android.graphics.SurfaceTexture
 import android.opengl.GLSurfaceView
+import android.util.Log
 import android.widget.Toast
 import androidx.camera.core.ImageCapture
 import androidx.compose.foundation.Canvas
@@ -172,6 +173,9 @@ fun CameraScreen(
             lifecycleOwner.lifecycle.removeObserver(observer)
             cameraController.unbind()
             sounds.release()
+            // A timer or capture in flight dies with this screen; the flag
+            // lives in the Activity-scoped ViewModel and must not outlive it.
+            viewModel.capturing.value = false
         }
     }
 
@@ -201,8 +205,18 @@ fun CameraScreen(
                 return@capture
             }
             glView.queueEvent {
-                val processed = renderer.processStill(bitmap, stillParams)
+                val processed = try {
+                    renderer.processStill(bitmap, stillParams)
+                } catch (e: RuntimeException) {
+                    // e.g. backgrounded before the JPEG arrived: EGL context is gone
+                    Log.e("CameraScreen", "Still processing failed", e)
+                    null
+                }
                 bitmap.recycle()
+                if (processed == null) {
+                    MainScope().launch(Dispatchers.Main) { viewModel.capturing.value = false }
+                    return@queueEvent
+                }
                 if (stampTime) PhotoComposer.stampTimestamp(processed, era)
                 MainScope().launch(Dispatchers.Main) {
                     if (toPolaroid) {
@@ -388,7 +402,7 @@ fun CameraScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    IconButton(onClick = onOpenGallery, modifier = Modifier.size(48.dp)) {
+                    IconButton(onClick = onOpenGallery, enabled = !capturing, modifier = Modifier.size(48.dp)) {
                         Icon(
                             Icons.Filled.PhotoLibrary,
                             contentDescription = stringResource(R.string.gallery),

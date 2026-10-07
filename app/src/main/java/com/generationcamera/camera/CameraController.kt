@@ -135,7 +135,16 @@ class CameraController(private val context: Context) {
         val buffer = image.planes[0].buffer
         val bytes = ByteArray(buffer.remaining())
         buffer.get(bytes)
-        val raw = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null
+        // Stills are capped at EraRenderer.STILL_MAX_DIM, so decode at the smallest
+        // power-of-two subsample that still keeps the long edge at or above it.
+        val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
+        opts.inJustDecodeBounds = false
+        opts.inSampleSize = 1
+        while (maxOf(opts.outWidth, opts.outHeight) / (opts.inSampleSize * 2) >= DECODE_MIN_LONG_EDGE) {
+            opts.inSampleSize *= 2
+        }
+        val raw = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts) ?: return null
         val rotation = image.imageInfo.rotationDegrees
         if (rotation == 0 && !lensFront) return raw
         val m = Matrix()
@@ -154,5 +163,6 @@ class CameraController(private val context: Context) {
 
     private companion object {
         const val TAG = "CameraController"
+        const val DECODE_MIN_LONG_EDGE = 2560   // == EraRenderer.STILL_MAX_DIM
     }
 }

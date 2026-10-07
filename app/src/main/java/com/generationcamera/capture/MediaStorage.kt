@@ -46,22 +46,22 @@ object MediaStorage {
             ?: return null
         try {
             val out = resolver.openOutputStream(uri) ?: throw IOException("No stream for $uri")
-            out.use { bitmap.compress(Bitmap.CompressFormat.JPEG, 95, it) }
+            // compress() swallows stream errors (disk full) and returns false
+            out.use { if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 95, it)) throw IOException("JPEG write failed") }
+            try {
+                resolver.openFileDescriptor(uri, "rw")?.use { pfd ->
+                    tagAndSave(ExifInterface(pfd.fileDescriptor), eraId, degree)
+                }
+            } catch (_: Exception) {
+                // EXIF tagging is best-effort; the image itself is already written.
+            }
+            values.clear()
+            values.put(MediaStore.Images.Media.IS_PENDING, 0)
+            if (resolver.update(uri, values, null, null) < 1) throw IOException("Publish failed")
         } catch (e: Exception) {
             resolver.delete(uri, null, null)   // don't leave a pending ghost row
             throw e
         }
-        try {
-            resolver.openFileDescriptor(uri, "rw")?.use { pfd ->
-                tagAndSave(ExifInterface(pfd.fileDescriptor), eraId, degree)
-            }
-        } catch (_: Exception) {
-            // EXIF tagging is best-effort; the image itself is already saved,
-            // and the row must still be published below.
-        }
-        values.clear()
-        values.put(MediaStore.Images.Media.IS_PENDING, 0)
-        resolver.update(uri, values, null, null)
         return uri
     }
 
@@ -74,20 +74,26 @@ object MediaStorage {
         )
         if (!dir.exists() && !dir.mkdirs()) return null
         val file = File(dir, name)
-        FileOutputStream(file).use { out ->
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
-        }
         try {
-            tagAndSave(ExifInterface(file.absolutePath), eraId, degree)
-        } catch (_: Exception) {
-            // best-effort, as above
+            FileOutputStream(file).use { out ->
+                if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)) throw IOException("JPEG write failed")
+            }
+            try {
+                tagAndSave(ExifInterface(file.absolutePath), eraId, degree)
+            } catch (_: Exception) {
+                // best-effort, as above
+            }
+            val values = ContentValues().apply {
+                put(MediaStore.Images.Media.DATA, file.absolutePath)
+                put(MediaStore.Images.Media.DISPLAY_NAME, name)
+                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            }
+            return context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+                ?: throw IOException("MediaStore insert failed")
+        } catch (e: Exception) {
+            file.delete()   // no half-written file without a gallery row
+            throw e
         }
-        val values = ContentValues().apply {
-            put(MediaStore.Images.Media.DATA, file.absolutePath)
-            put(MediaStore.Images.Media.DISPLAY_NAME, name)
-            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-        }
-        return context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
     }
 
     private fun tagAndSave(exif: ExifInterface, eraId: String, degree: Int) {
